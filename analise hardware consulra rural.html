@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConsultaRural - Análise Interativa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices (Post-Update, No AI, New Exchange Rate):
+        - Report Info: Sumário Executivo (PDF I). Goal: Provide a high-level overview. Viz/Presentation: Text block. Interaction: None. Justification: Standard. Library/Method: HTML/Tailwind.
+        - Report Info: Análise dos Requisitos Mínimos de Hardware (PDF II.A). Goal: Introduce hardware analysis. Viz/Presentation: Text block. Interaction: None. Justification: Concise. Library/Method: HTML/Tailwind.
+        - Report Info: Componentes Centrais da Infraestrutura e Tabela Resumo (PDF II.B, II.C). Goal: Detail proposed infrastructure. Viz/Presentation: Structured text/lists. Interaction: None. Justification: Clear. Library/Method: HTML/Tailwind.
+        - Report Info: Resumo Comparativo de Custos e Diferenciais Chave (PDF IV.B). Goal: Map requirements to providers. Viz/Presentation: Text block. Interaction: None. Justification: Overview. Library/Method: HTML/Tailwind.
+        - Report Info: Custos Anuais Consolidados (PDF IV.A, Updated Rate). Goal: Visually compare costs. Viz/Presentation: Grouped Bar Chart (Chart.js). Interaction: Tooltips. Justification: Effective comparison. Library/Method: Chart.js.
+        - Report Info: Recomendações Estratégicas (PDF V, Updated Rate). Goal: Present final recommendations. Viz/Presentation: Text block. Interaction: None. Justification: Clear advice. Library/Method: HTML/Tailwind.
+    Confirming NO SVG/Mermaid, supporting the DESIGNED structure. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px;
+            max-height: 500px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 400px;
+                max-height: 450px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #0284C7; /* sky-600 */
+        }
+        .section-title-icon {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+            color: #0EA5E9; /* sky-500 */
+        }
+        .hardware-item {
+            background-color: #f8fafc; /* bg-slate-50 or a bit lighter like slate-100 */
+            padding: 1rem; /* p-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .hardware-item h4 {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #0369a1; /* text-sky-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .hardware-item p, .hardware-item ul {
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.5; /* leading-relaxed */
+        }
+        .hardware-item ul {
+            list-style-position: inside;
+            padding-left: 0.5rem;
+        }
+        .alert-card {
+            background-color: #fef9c3; /* bg-yellow-100 */
+            border-left-width: 4px;
+            border-color: #facc15; /* border-yellow-500 */
+            color: #ca8a04; /* text-yellow-700 */
+            padding: 1rem; /* p-4 */
+            border-radius: 0.375rem; /* rounded-md */
+            margin-top: 1.5rem; /* my-6 - top */
+            margin-bottom: 1.5rem; /* my-6 - bottom */
+        }
+        .alert-card p {
+            margin: 0;
+        }
+        .alert-card strong {
+            font-weight: 600;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-sky-600">ConsultaRural</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#sumario" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Sumário</a>
+                        <a href="#requisitos" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Requisitos</a>
+                        <a href="#componentes" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Componentes</a>
+                        <a href="#comparativo" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Comparativo</a>
+                        <a href="#custos" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Custos</a>
+                        <a href="#recomendacoes" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-sky-600">Recomendações</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-sky-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500">
+                        <span class="sr-only">Abrir menu principal</span>
+                        <svg id="menu-icon-open" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg id="menu-icon-close" class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#sumario" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Sumário</a>
+                <a href="#requisitos" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Requisitos</a>
+                <a href="#componentes" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Componentes</a>
+                <a href="#comparativo" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Comparativo</a>
+                <a href="#custos" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Custos</a>
+                <a href="#recomendacoes" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-sky-600 hover:bg-slate-50">Recomendações</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="alert-card" role="alert">
+            <p><strong>Atenção:</strong> As estimativas de preços apresentadas nesta página são aproximadas e baseadas em dados de Maio de 2025 com uma taxa de câmbio de 1 USD = 5,70 BRL. Estes valores podem não refletir os preços atuais de mercado e devem ser usados apenas como referência. Recomenda-se verificar os preços diretamente com os provedores de nuvem para obter as informações mais recentes.</p>
+        </div>
+
+        <section id="sumario" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">📄</span>Sumário Executivo</h2>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">A. Propósito do Relatório:</h3>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    Este relatório apresenta uma análise detalhada dos requisitos do projeto "Consulta Rural", com o objetivo de definir as especificações mínimas de hardware para sua hospedagem. Adicionalmente, realiza uma comparação dos custos anuais de implantação nas principais plataformas de nuvem: Amazon Web Services (AWS), Microsoft Azure, Google Cloud Platform (GCP) e DigitalOcean. A análise de custos foca na região do Brasil, considera uma base de 10.000 usuários ativos mensais e visa a máxima economia, incluindo descontos por compromissos contratuais de 1 ano. Custos relacionados à infraestrutura de Inteligência Artificial (IA) foram excluídos, partindo do pressuposto que serão utilizados serviços externos especializados.
+                </p>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">B. Principais Conclusões - Hardware Mínimo Recomendado:</h3>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    Para suportar adequadamente a aplicação "Consulta Rural" e seus usuários, identificamos os seguintes componentes de hardware como o mínimo viável:
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-base sm:text-lg mb-4">
+                    <li><strong>Servidores de Aplicação:</strong> Pelo menos duas instâncias de computação, cada uma com aproximadamente 2 vCPUs e 4 GB de RAM, operando com um balanceador de carga para assegurar alta disponibilidade e desempenho.</li>
+                    <li><strong>Servidor de Banco de Dados:</strong> Um serviço de banco de dados relacional gerenciado (preferencialmente PostgreSQL ou MySQL), configurado para alta disponibilidade, com aproximadamente 2 vCPUs, 2-4 GB de RAM e uma capacidade inicial de armazenamento SSD de 100 GB.</li>
+                    <li><strong>Armazenamento de Objetos:</strong> Aproximadamente 500 GB de capacidade para imagens (identificação de animais e plantas, fotos de consultas), relatórios em PDF e backups.</li>
+                    <li><strong>Camada de Cache:</strong> Um serviço de cache gerenciado (como Redis ou Memcached) com aproximadamente 1 GB de RAM, para otimizar a responsividade da aplicação.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">C. Principais Conclusões - Comparativo de Custos (Resumo):</h3>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    A escolha do provedor de nuvem mais econômico dependerá do equilíbrio entre os custos diretos dos serviços e a capacidade de cada plataforma em atender aos requisitos críticos do projeto, como alta disponibilidade e a funcionalidade de sincronização de dados offline, sempre buscando a máxima economia. Uma análise detalhada dos custos anuais em Reais (R$) para cada provedor é apresentada neste relatório, utilizando uma taxa de câmbio de 1 USD = 5,70 BRL.
+                </p>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">D. Recomendação Principal:</h3>
+                <p class="text-base sm:text-lg leading-relaxed">
+                    A recomendação do provedor de nuvem será detalhada ao final deste documento, considerando o custo anual total, a capacidade de atender aos requisitos do projeto "Consulta Rural" e a presença regional no Brasil.
+                </p>
+            </div>
+        </section>
+
+        <section id="requisitos" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">⚙️</span>Análise dos Requisitos Mínimos de Hardware</h2>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">A. Introdução:</h3>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    As estimativas de hardware a seguir baseiam-se nos requisitos funcionais e não funcionais do projeto "Consulta Rural". O objetivo é especificar uma infraestrutura capaz de atender a todas as funcionalidades centrais de forma confiável e com desempenho satisfatório para 10.000 usuários ativos mensais, evitando superdimensionamento e garantindo escalabilidade, alta disponibilidade e segurança.
+                </p>
+            </div>
+        </section>
+
+        <section id="componentes" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">🛠️</span>Componentes Centrais e Especificações Mínimas</h2>
+                <p class="text-base sm:text-lg leading-relaxed mb-6">
+                    A infraestrutura para o ConsultaRural, projetada para 10.000 usuários ativos mensais, é composta pelos seguintes elementos chave:
+                </p>
+                
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">B. Componentes Centrais da Infraestrutura:</h3>
+                <div class="space-y-6">
+                    <div class="hardware-item">
+                        <h4 class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-server mr-2" viewBox="0 0 16 16"><path d="M1.333 2.667C1.333 1.194 4.318 0 8 0s6.667 1.194 6.667 2.667V4c0 1.473-2.985 2.667-6.667 2.667S1.333 5.473 1.333 4V2.667z"/><path d="M1.333 6.334v3C1.333 10.805 4.318 12 8 12s6.667-1.194 6.667-2.667v-3c0 1.473-2.985 2.667-6.667 2.667S1.333 7.807 1.333 6.334z"/><path d="M1.333 12.667v3C1.333 17.138 4.318 18.331 8 18.331s6.667-1.194 6.667-2.667v-3c0 1.473-2.985 2.667-6.667 2.667S1.333 14.14 1.333 12.667zM8 1a.667.667 0 0 0-.667.667V4a.667.667 0 0 0 .667.667h.001a.667.667 0 0 0 .666-.667V1.667A.667.667 0 0 0 8 1zm0 5.333a.667.667 0 0 0-.667.667V9.33a.667.667 0 0 0 .667.667h.001a.667.667 0 0 0 .666-.667V6.333a.667.667 0 0 0-.666-.667H8zm0 5.334a.667.667 0 0 0-.667.667v2.666a.667.667 0 0 0 .667.667h.001a.667.667 0 0 0 .666-.667v-2.666a.667.667 0 0 0-.666-.667H8z"/></svg>1. Servidores de Aplicação (Recursos Computacionais)</h4>
+                        <ul class="list-disc">
+                            <li>A infraestrutura deve suportar o acesso simultâneo de 10.000 usuários, com operações básicas concluídas rapidamente. O sistema atenderá a interfaces móveis para produtores e web para especialistas e administradores.</li>
+                            <li>Os servidores gerenciarão autenticação, perfis, dados de animais e plantas, fluxo de consultas, geração de relatórios e notificações.</li>
+                            <li><strong>Estimativa Mínima Viável:</strong> Duas instâncias de servidor, cada uma com 2 vCPUs e 4 GB de RAM, com um balanceador de carga para alta disponibilidade (99,9%) e distribuição de tráfego. A arquitetura deve permitir atualizações sem interrupção do serviço.</li>
+                        </ul>
+                    </div>
+                    <div class="hardware-item">
+                        <h4 class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-database-fill-gear mr-2" viewBox="0 0 16 16"><path d="M8 1c-1.573 0-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4s.875 1.755 1.904 2.223C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777C13.125 5.755 14 5.007 14 4s-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1Z"/><path d="M2 5.698V8c0 1.007.875 1.755 1.904 2.223C4.978 10.711 6.427 11 8 11s3.022-.289 4.096-.777C13.125 9.755 14 9.007 14 8V5.698c-.271.202-.58.385-.904.525C12.022 6.711 10.573 7 9 7c-1.573 0-3.022-.289-4.096-.777-.324-.14-.633-.323-.904-.525ZM2 9.698V12c0 1.007.875 1.755 1.904 2.223C4.978 14.711 6.427 15 8 15s3.022-.289 4.096-.777C13.125 13.755 14 13.007 14 12V9.698c-.271.202-.58.385-.904.525C12.022 10.711 10.573 11 9 11c-1.573 0-3.022-.289-4.096-.777-.324-.14-.633-.323-.904-.525Z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Zm-3.5-2a.5.5 0 0 0-.5.5v1h-1a.5.5 0 0 0 0 1h1v1a.5.5 0 0 0 1 0v-1h1a.5.5 0 0 0 0-1h-1v-1a.5.5 0 0 0-.5-.5ZM12.292 10.86a4.462 4.462 0 0 0-.96-.055 4.46 4.46 0 0 0-1.02.083l-.845 1.69a.5.5 0 0 0 .894.447l.29-.581a3.473 3.473 0 0 1 .24 1.64l-.29.581a.5.5 0 1 0 .895.447l.845-1.691a4.48 4.48 0 0 0 1.02-.083 4.462 4.462 0 0 0 .96.055l.21.42a.5.5 0 0 0 .895-.447l-.21-.421a3.473 3.473 0 0 1 1.208-.569l.42.21a.5.5 0 0 0 .447-.894l-.42-.21a3.473 3.473 0 0 1 .166-1.89l.42.21a.5.5 0 0 0 .447-.895l-.42-.21a3.473 3.473 0 0 1-.166-1.89l-.42-.21a.5.5 0 0 0-.447.895l.42.21a3.473 3.473 0 0 1-1.208.569l-.21-.42a.5.5 0 0 0-.895.447l.21.421a3.473 3.473 0 0 1-.24-1.64l.29-.581a.5.5 0 1 0-.895-.447l-.845 1.69Z"/></svg>2. Servidor de Banco de Dados (Banco de Dados Relacional Gerenciado)</h4>
+                        <ul class="list-disc">
+                            <li>O banco de dados armazenará dados de usuários, propriedades, animais, plantas, históricos de saúde e consultas.</li>
+                            <li>Requisitos críticos incluem alta disponibilidade (99,9%), criptografia de dados sensíveis em repouso, integridade dos dados, transações atômicas e capacidade de escalabilidade futura. A funcionalidade offline parcial adiciona complexidade, exigindo estratégias robustas para sincronização e resolução de conflitos de dados.</li>
+                            <li><strong>Estimativa Mínima Viável:</strong> Uma instância gerenciada de PostgreSQL ou MySQL com 2 vCPUs, 2-4 GB de RAM, configurada para alta disponibilidade. Armazenamento inicial de 100 GB SSD.</li>
+                        </ul>
+                    </div>
+                     <div class="hardware-item">
+                        <h4 class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-folder-symlink-fill mr-2" viewBox="0 0 16 16"><path d="m11.06.47.94.94L8.5 4.94 11 8.47l-.94.94L7.06 5.91V10H6V5.91L2.53 9.41l-.94-.94L5.06 5 .59 1.41l.94-.94L5 3.06V0h1v3.06z"/><path d="M.5 3A1.5 1.5 0 0 0 0 4.5V5h10V3zM11 4.5A1.5 1.5 0 0 1 9.5 3V1.5h-2A1.5 1.5 0 0 0 6 0H3a2 2 0 0 0-2 2v1.5H2a.5.5 0 0 1 .485.379l.83 2.491A.5.5 0 0 1 3.485 7H11V4.5z"/></svg>3. Armazenamento de Objetos (para Arquivos e Imagens)</h4>
+                        <ul class="list-disc">
+                            <li>Necessário para armazenar um volume significativo de imagens (identificação de animais/plantas, fotos de consultas) e relatórios em PDF. As fotos tiradas offline serão sincronizadas posteriormente.</li>
+                            <li><strong>Estimativa de Volume de Dados (Anual):</strong> Considerando o volume de fotos por animal/planta, por consulta, e laudos, estima-se cerca de 310 GB no primeiro ano. Para acomodar crescimento, dados históricos e backups, uma capacidade inicial de 500 GB é recomendada. Políticas de ciclo de vida de armazenamento devem ser implementadas para mover dados mais antigos e menos acessados para camadas de armazenamento mais baratas, otimizando custos.</li>
+                        </ul>
+                    </div>
+                    <div class="hardware-item">
+                        <h4 class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-memory mr-2" viewBox="0 0 16 16"><path d="M1 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H1Zm0-1h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M4 5h8a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm0-1a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4Z"/><path d="M2 10h1v2H2v-2Zm2 0h1v2H4v-2Zm2 0h1v2H6v-2Zm2 0h1v2H8v-2Zm2 0h1v2h-1v-2Zm2 0h1v2h-1v-2Z"/></svg>4. Camada de Cache (Cache Distribuído)</h4>
+                         <ul class="list-disc">
+                            <li>Essencial para melhorar o desempenho e reduzir a carga no banco de dados.</li>
+                            <li>Utilizado para sessões de usuário, dados frequentemente acessados (raças, tipos de plantas, diagnósticos comuns), agendas de especialistas e painéis administrativos.</li>
+                            <li><strong>Estimativa Mínima Viável:</strong> Uma instância gerenciada de Redis ou Memcached com aproximadamente 1 GB de RAM. Inicialmente um nó único, com possibilidade de evoluir para alta disponibilidade se necessário.</li>
+                        </ul>
+                    </div>
+                    <div class="hardware-item">
+                        <h4 class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-hdd-network-fill mr-2" viewBox="0 0 16 16"><path d="M2 2a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h5.5a.5.5 0 0 0 0-1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8.5a.5.5 0 0 0 0 1H14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2Zm.5 3a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1ZM2 9.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5H3v-2H2Zm4.5-.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-3Zm0 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5H3v-2H2Z"/><path d="M11.5 14.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-3Zm.5 1.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"/><path d="M2 13.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5H3v-2H2Z"/></svg>5. Rede (Balanceador de Carga e Transferência de Dados)</h4>
+                        <ul class="list-disc">
+                            <li>Um balanceador de carga é crucial para distribuir o tráfego entre os servidores de aplicação e garantir alta disponibilidade.</li>
+                            <li>A transferência de dados de saída será impulsionada pelo fornecimento de respostas de API, imagens e relatórios. A otimização do uso de dados móveis e para conexões limitadas é fundamental.</li>
+                            <li><strong>Estimativa Mensal de Transferência de Dados de Saída:</strong> Considerando tráfego de API, visualização de imagens, download de laudos e sincronização offline, estima-se um volume de 200 GB/mês. A compressão de imagens e a sincronização eficiente são vitais para controlar este volume.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-semibold text-teal-600 mt-8 mb-3">C. Tabela Resumo: Requisitos Mínimos de Hardware Viáveis</h3>
+                <div class="space-y-3 text-base sm:text-lg">
+                    <p><strong>Servidores de Aplicação:</strong> 2 instâncias, cada uma com 2 vCPUs, 4 GB RAM, ~50GB SSD (Disco de SO).</p>
+                    <p><strong>Servidor de Banco de Dados:</strong> PostgreSQL/MySQL Gerenciado, 2 vCPUs, 2-4 GB RAM, 100 GB SSD, Configuração de Alta Disponibilidade.</p>
+                    <p><strong>Armazenamento de Objetos:</strong> 500 GB (Camada Standard, com ciclo de vida para arquivamento de imagens antigas).</p>
+                    <p><strong>Camada de Cache:</strong> Redis/Memcached Gerenciado, ~1 GB RAM (nó único inicialmente).</p>
+                    <p><strong>Balanceador de Carga:</strong> 1 Balanceador de Carga de Aplicação/HTTP(S), capacidade de Alta Disponibilidade.</p>
+                    <p><strong>Transferência de Dados (Saída):</strong> Estimativa de 200 GB/mês.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparativo" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">☁️</span>Resumo Comparativo e Diferenciais Chave</h2>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    A seleção final do provedor deve considerar não apenas o custo direto, mas também a facilidade de uso, disponibilidade de serviços PaaS que reduzem esforço operacional e opções de escalabilidade, que influenciam o Custo Total de Propriedade (TCO).
+                </p>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">B. Diferenciais Chave Além do Custo:</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-lg font-semibold text-sky-600">1. Maturidade e Ecossistema de Serviços:</h4>
+                        <ul class="list-disc list-inside text-sm sm:text-base space-y-1 pl-4">
+                            <li><strong>AWS:</strong> Oferta mais ampla e madura globalmente e em São Paulo, vantajoso para futuras expansões.</li>
+                            <li><strong>Azure:</strong> Forte integração com o ecossistema Microsoft, robusto para empresas já usuárias de suas tecnologias.</li>
+                            <li><strong>GCP:</strong> Reconhecido por capacidades em dados e IA, com presença em expansão em São Paulo.</li>
+                            <li><strong>DigitalOcean:</strong> Simplicidade e precificação transparente, atraente para startups, mas com conjunto de serviços mais enxuto.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-sky-600">2. Facilidade de Gerenciamento e Suporte:</h4>
+                         <ul class="list-disc list-inside text-sm sm:text-base space-y-1 pl-4">
+                            <li><strong>DigitalOcean:</strong> Menor sobrecarga de gerenciamento para equipes menores.</li>
+                            <li><strong>AWS, Azure, GCP:</strong> Portais mais complexos, mas com mais granularidade e automação.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-sky-600">3. Escalabilidade:</h4>
+                        <p class="text-sm sm:text-base pl-4">Todos os provedores oferecem caminhos para escalar. AWS, Azure e GCP podem oferecer mais opções granulares para otimizar a escalabilidade à medida que o projeto cresce.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-sky-600">4. Vantagens Específicas de Recursos:</h4>
+                        <ul class="list-disc list-inside text-sm sm:text-base space-y-1 pl-4">
+                            <li>Integração nativa de serviços dentro de cada ecossistema pode oferecer eficiências.</li>
+                            <li>Instâncias baseadas em ARM (AWS t4g) podem oferecer melhor relação preço/desempenho.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="custos" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">📊</span>Análise de Custos Anuais por Provedor de Nuvem (R$)</h2>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">A. Metodologia e Premissas:</h3>
+                <ul class="list-disc list-inside space-y-2 text-base sm:text-lg mb-4">
+                    <li><strong>Região:</strong> Custos calculados para serviços nas regiões São Paulo (AWS, GCP) ou Sul do Brasil (Azure). Para a DigitalOcean, que não possui região no Brasil, utiliza-se sua precificação global.</li>
+                    <li><strong>Conversão Cambial:</strong> Preços em USD convertidos para BRL utilizando 1 USD = 5,70 BRL (taxa para fins de estimativa, sujeita a flutuações).</li>
+                    <li><strong>Período de Compromisso e Descontos:</strong> Custos baseados em compromissos de 1 ano para maximizar descontos.</li>
+                    <li><strong>Sistema Operacional:</strong> Linux para todas as instâncias de computação.</li>
+                    <li><strong>Transferência de Dados:</strong> Entrada de dados geralmente gratuita. Saída estimada em 200 GB/mês.</li>
+                    <li><strong>Data da Precificação:</strong> Custos baseados em informações de maio de 2025.</li>
+                </ul>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    O gráfico abaixo compara o "Custo Anual Total Estimado (R$)" para cada provedor, considerando compromissos de 1 ano. Passe o mouse sobre as barras para ver os valores exatos.
+                </p>
+                <div class="chart-container my-8">
+                    <canvas id="costComparisonChart"></canvas>
+                </div>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">Custos Anuais Estimados (Com Reserva de 1 Ano):</h3>
+                <ul class="list-disc list-inside space-y-2 text-sm sm:text-base">
+                    <li><strong>AWS (São Paulo):</strong> R$ 14.229,54</li>
+                    <li><strong>Microsoft Azure (Sul do Brasil):</strong> R$ 19.718,75</li>
+                    <li><strong>Google Cloud Platform (São Paulo):</strong> R$ 26.979,01</li>
+                    <li><strong>DigitalOcean (Global):</strong> R$ 10.567,80 (Nota: Sem data center no Brasil, o que pode impactar latência e LGPD).</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-teal-600 mt-8 mb-3">F. Observações Gerais sobre Otimização de Custos:</h3>
+                <ul class="list-disc list-inside space-y-2 text-sm sm:text-base">
+                    <li><strong>Impacto da Localização:</strong> A escolha de regiões no Brasil (São Paulo/Sul do Brasil) geralmente implica custos mais elevados. A conformidade com a Lei Geral de Proteção de Dados (LGPD) pode influenciar a decisão pela hospedagem local.</li>
+                    <li><strong>Alta Disponibilidade:</strong> Atingir 99,9% de disponibilidade requer redundância, o que impacta os custos dos componentes de computação e banco de dados.</li>
+                    <li><strong>Crescimento Gradual:</strong> A projeção de usuários indica um crescimento inicial. Comprometer recursos para 10.000 usuários desde o início pode levar a subutilização. Uma abordagem faseada para os compromissos de longo prazo pode ser mais econômica.</li>
+                    <li><strong>Otimização da Transferência de Dados:</strong> A otimização de imagens e o uso de Redes de Distribuição de Conteúdo (CDNs) são vitais para controlar os custos de transferência de dados, especialmente no Brasil.</li>
+                    <li><strong>Instâncias "Burstable":</strong> Oferecem custos base menores, mas para carga sustentada, o monitoramento é crucial para evitar degradação de desempenho ou custos inesperados.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="recomendacoes" class="pt-16 -mt-16 mb-12">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-700 mb-6 flex items-center"><span class="section-title-icon">💡</span>Recomendações e Considerações Estratégicas</h2>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">A. Recomendação Primária:</h3>
+                <p class="text-base sm:text-lg leading-relaxed mb-2">
+                    Considerando a "máxima economia possível" para o hardware mínimo viável e 10.000 usuários ativos mensais, a <strong>DigitalOcean</strong> apresenta o menor custo anual estimado (<strong>R$ 10.567,80</strong>).
+                </p>
+                <p class="text-base sm:text-lg leading-relaxed mb-4 p-3 bg-amber-100 border-l-4 border-amber-500 rounded">
+                    <strong>Ressalva Importante:</strong> A DigitalOcean não possui data center no Brasil. Isso pode resultar em maior latência para usuários brasileiros e levanta considerações sobre a conformidade com a LGPD, caso a residência de dados no Brasil seja um requisito estrito.
+                </p>
+                <p class="text-base sm:text-lg leading-relaxed mb-4">
+                    Se a residência de dados no Brasil e a menor latência forem prioritárias, a <strong>Amazon Web Services (AWS)</strong> é a segunda opção mais econômica entre os provedores com presença local, com um custo anual estimado de <strong>R$ 14.229,54</strong> (com reservas de 1 ano).
+                </p>
+
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">B. Opções Secundárias (com presença no Brasil):</h3>
+                <ul class="list-disc list-inside space-y-2 text-base sm:text-lg mb-4">
+                    <li><strong>Amazon Web Services (AWS):</strong> Solução mais econômica com infraestrutura local, vasta gama de serviços e maturidade na região de São Paulo. (Custo: R$ 14.229,54)</li>
+                    <li><strong>Microsoft Azure:</strong> Custo anual estimado de R$ 19.718,75. Viável, especialmente com familiaridade prévia com o ecossistema Microsoft.</li>
+                    <li><strong>Google Cloud Platform (GCP):</strong> Custo anual estimado de R$ 26.979,01. Pode se tornar mais competitivo se o projeto evoluir para uso intensivo de seus serviços de IA e dados.</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">C. Considerações Estratégicas para Implementação:</h3>
+                <ul class="list-disc list-inside space-y-2 text-base sm:text-lg">
+                    <li><strong>Compromisso Faseado:</strong> Alinhar os compromissos de longo prazo com o crescimento real da base de usuários pode gerar economias nos primeiros meses.</li>
+                    <li><strong>Otimização da Transferência de Dados:</strong> Implementar compressão de imagens agressiva, formatos modernos (ex: WebP) e uso eficaz de CDNs é crítico para controlar custos.</li>
+                    <li><strong>Monitoramento e Ajuste de Tamanho (Right-Sizing):</strong> Monitorar continuamente a utilização de recursos para ajustar o dimensionamento, evitando desperdícios ou gargalos de desempenho.</li>
+                    <li><strong>Backup e Recuperação de Desastres:</strong> Um plano completo de recuperação de desastres precisa ser projetado e custeado, além dos backups básicos.</li>
+                    <li><strong>Segurança Contínua:</strong> A implementação e manutenção de medidas de segurança (WAF, firewalls, IAM) é uma tarefa operacional contínua.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-teal-600 mt-6 mb-3">D. Oportunidades Futuras de Otimização de Custos:</h3>
+                <ul class="list-disc list-inside space-y-2 text-base sm:text-lg">
+                    <li><strong>Compromissos de Longo Prazo (3 anos):</strong> Podem oferecer descontos ainda maiores (50-70%) para provedores como AWS, Azure e GCP.</li>
+                    <li><strong>Instâncias Spot/Preemptivas:</strong> Para cargas de trabalho tolerantes a falhas (processamento em lote, etc.), podem gerar economias de até 90%.</li>
+                    <li><strong>Componentes Serverless:</strong> Para funcionalidades acionadas por eventos com demanda variável (processamento de imagens, notificações), podem ser mais custo-efetivos.</li>
+                    <li><strong>Revisão de Camadas de Armazenamento:</strong> Implementar políticas de ciclo de vida para mover dados mais antigos para camadas de arquivamento mais baratas.</li>
+                </ul>
+            </div>
+        </section>
+
+        <div class="alert-card" role="alert">
+            <p><strong>Atenção:</strong> As estimativas de preços apresentadas nesta página são aproximadas e baseadas em dados de Maio de 2025 com uma taxa de câmbio de 1 USD = 5,70 BRL. Estes valores podem não refletir os preços atuais de mercado e devem ser usados apenas como referência. Recomenda-se verificar os preços diretamente com os provedores de nuvem para obter as informações mais recentes.</p>
+        </div>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 py-8 text-center">
+        <p class="text-sm">&copy; 2024 ConsultaRural - Análise Interativa. Baseado no relatório fornecido.</p>
+        <p class="text-xs mt-1">Data da Análise de Custos: Maio de 2025. Conversão: 1 USD = 5,70 BRL.</p>
+    </footer>
+
+    <script>
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIconOpen = document.getElementById('menu-icon-open');
+        const menuIconClose = document.getElementById('menu-icon-close');
+
+        // Event listener para o botão do menu móvel
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            menuIconOpen.classList.toggle('hidden');
+            menuIconClose.classList.toggle('hidden');
+        });
+
+        // Event listeners para os links de navegação (âncoras)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                if (this.hash !== "") { // Certifica-se de que há um hash (ex: #sumario)
+                    e.preventDefault(); // Previne o comportamento padrão de salto da âncora
+
+                    // Fecha o menu móvel se estiver aberto
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        menuIconOpen.classList.remove('hidden');
+                        menuIconClose.classList.add('hidden');
+                    }
+
+                    const targetElement = document.querySelector(this.hash);
+                    if (targetElement) {
+                        // Usa scrollIntoView para uma rolagem suave até o elemento alvo
+                        // O offset para o header fixo é tratado pelas classes pt-16 e -mt-16 nas seções
+                        // ou pela classe scroll-mt-16 (se fosse usada)
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Dados do gráfico de custos (já atualizados para BRL 5,70)
+        const costData = {
+            labels: ['AWS', 'Google Cloud', 'Microsoft Azure', 'DigitalOcean'],
+            datasets: [
+                {
+                    label: 'Custo Anual Estimado (Com Reserva 1 Ano, R$)',
+                    data: [14229.54, 26979.01, 19718.75, 10567.80], 
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)', 
+                    borderColor: 'rgba(34, 197, 94, 1)', 
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
+        };
+
+        // Configuração do gráfico
+        const costConfig = {
+            type: 'bar',
+            data: costData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Comparativo de Custos Anuais Estimados por Provedor (R$)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { top: 10, bottom: 20 }
+                    },
+                    legend: {
+                        position: 'top',
+                         labels: { font: { size: 12 }, boxWidth: 20, padding: 20 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 4
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Custo Anual (R$)', font: { size: 14, weight: '500' }},
+                        ticks: {
+                            callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+                            font: { size: 10 }
+                        }
+                    },
+                    x: {
+                       ticks: {
+                            font: { size: 11 },
+                            maxRotation: 0, minRotation: 0, autoSkip: false,
+                            callback: function(value) { 
+                                const label = this.getLabelForValue(value);
+                                const maxLength = 10; 
+                                if (label.length > maxLength) {
+                                    const words = label.split(' ');
+                                    let lines = [''];
+                                    let currentLine = 0;
+                                    words.forEach(word => {
+                                        if ((lines[currentLine] + word).length > maxLength && lines[currentLine].length > 0) {
+                                            currentLine++;
+                                            lines[currentLine] = '';
+                                        }
+                                        lines[currentLine] += word + ' ';
+                                    });
+                                    return lines.map(line => line.trim());
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                animation: { duration: 1000, easing: 'easeInOutQuart' }
+            }
+        };
+
+        // Criação do gráfico
+        const costComparisonChartCtx = document.getElementById('costComparisonChart');
+        if (costComparisonChartCtx) {
+            new Chart(costComparisonChartCtx, costConfig);
+        } else {
+            console.error("Elemento com ID 'costComparisonChart' não encontrado.");
+        }
+    </script>
+</body>
+</html>
